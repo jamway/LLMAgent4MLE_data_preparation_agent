@@ -5,7 +5,7 @@ import difflib
 import sklearn
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-def load_data(file_path):
+def load_data(file_path:str):
   """
   Loads data from a file into a pandas DataFrame.
 
@@ -30,17 +30,17 @@ def load_data(file_path):
     print(f"Error loading data: {e}")
     return None
 
-def profile_data(df):
+def profile_data(file_path:str):
   """
   Profiles a pandas DataFrame.
 
   Args:
-    df: The DataFrame to profile.
+    file_path: The path to the file that contains DataFrame.
 
   Returns:
     A dictionary containing the profile information.
   """
-
+  df=load_data(file_path)
   profile = {}
 
   # Basic Information
@@ -80,7 +80,7 @@ def handle_missing_values(file_path, strategy='mean'):
     A DataFrame with missing values handled.
   """
 
-  df = pd.read_csv(file_path)
+  df=load_data(file_path)
 
   if strategy == 'mean':
     df.fillna(df.mean(), inplace=True)
@@ -96,19 +96,19 @@ def handle_missing_values(file_path, strategy='mean'):
   return df
 
 
-def handle_outliers(df, method='z-score', threshold=3):
+def handle_outliers(file_path:str, method:str='z-score', threshold:float=3.0):
   """
   Handles outliers in a DataFrame.
 
   Args:
-    df: The DataFrame to process.
+    file_path: The path to the file that contains DataFrame.
     method: The method to use for outlier detection. Can be 'z-score' or 'iqr'.
     threshold: The threshold for outlier detection.
 
   Returns:
     A DataFrame with outliers handled.
   """
-
+  df=load_data(file_path)
   if method == 'z-score':
     z_scores = np.abs((df - df.mean()) / df.std())
     df = df[(z_scores < threshold).all(axis=1)]
@@ -122,18 +122,18 @@ def handle_outliers(df, method='z-score', threshold=3):
 
   return df
 
-def normalize_data(df, method='standard'):
+def normalize_data(file_path:str, method:str='standard'):
   """
   Normalizes numerical features in a DataFrame.
 
   Args:
-    df: The DataFrame to process.
+    file_path: The path to the file that contains DataFrame.
     method: The normalization method to use. Can be 'standard' or 'min-max'.
 
   Returns:
     A DataFrame with normalized numerical features.
   """
-
+  df=load_data(file_path)
   numerical_cols = df.select_dtypes(include=np.number).columns
 
   if method == 'standard':
@@ -148,19 +148,19 @@ def normalize_data(df, method='standard'):
   return df
 
 
-def reduce_noise(df, method='rolling_mean', window_size=5):
+def reduce_noise(file_path:str, method:str='rolling_mean', window_size=5):
   """
   Reduces noise in a DataFrame.
 
   Args:
-    df: The DataFrame to process.
+    file_path: The path to the file that contains DataFrame.
     method: The method to use for noise reduction. Can be 'rolling_mean' or 'median_filter'.
     window_size: The size of the window for the rolling mean or median filter.
 
   Returns:
     A DataFrame with reduced noise.
   """
-
+  df=load_data(file_path)
   if method == 'rolling_mean':
     df = df.rolling(window=window_size).mean()
   elif method == 'median_filter':
@@ -183,7 +183,7 @@ def merge_data_sources(file_paths):
 
   dataframes = []
   for file_path in file_paths:
-    df = pd.read_csv(file_path)
+    df=load_data(file_path)
     dataframes.append(df)
 
   # Merge DataFrames based on a common key (adjust as needed)
@@ -193,19 +193,20 @@ def merge_data_sources(file_paths):
 
 
 
-def resolve_entity_conflicts(df1, df2, key_columns=['name', 'address']):
+def resolve_entity_conflicts(file_path1:str, file_path2:str, key_columns=['name', 'address']):
   """
   Resolves entity conflicts between two DataFrames.
 
   Args:
-    df1: The first DataFrame.
-    df2: The second DataFrame.
+    file_path1: The path to the first file that contains DataFrame.
+    file_path2: The path to the second file that contains DataFrame.
     key_columns: A list of columns to use for matching entities.
 
   Returns:
     A merged DataFrame with resolved entity conflicts.
   """
-
+  df1=load_data(file_path1)
+  df2=load_data(file_path2)
   merged_df = pd.concat([df1, df2], ignore_index=True)
 
   # Deduplication using fuzzy matching
@@ -228,7 +229,8 @@ def resolve_entity_conflicts(df1, df2, key_columns=['name', 'address']):
   groups = group_similar_records(merged_df)
 
   # Merge similar records within each group
-  def merge_records(df, group):
+  def merge_records(file_path:str, group):
+    df=load_data(file_path)
     merged_row = df.loc[group].mode().iloc[0]
     for col in key_columns:
       if merged_row[col] == merged_row[col]:  # Check for NaN values
@@ -245,18 +247,20 @@ def resolve_entity_conflicts(df1, df2, key_columns=['name', 'address']):
 
 
 
-def resolve_entity_conflicts_difflib(df1, df2, key_columns=['name', 'address']):
+def resolve_entity_conflicts_difflib(file_path1, file_path2, key_columns=['name', 'address']):
   """
   Resolves entity conflicts between two DataFrames using difflib.
 
   Args:
-    df1: The first DataFrame.
-    df2: The second DataFrame.
+    file_path1: The path to the first file that contains DataFrame.
+    file_path2: The path to the second file that contains DataFrame.
     key_columns: A list of columns to use for matching entities.
 
   Returns:
     A merged DataFrame with resolved entity conflicts.
   """
+  df1=load_data(file_path1)
+  df2=load_data(file_path2)
 
   merged_df = pd.concat([df1, df2], ignore_index=True)
 
@@ -266,18 +270,18 @@ def resolve_entity_conflicts_difflib(df1, df2, key_columns=['name', 'address']):
       score += difflib.SequenceMatcher(None, str(row1[col]), str(row2[col])).ratio() * 100
     return score
   
-def encode_categorical_data(df, encoding_type='one-hot'):
+def encode_categorical_data(file_path:str, encoding_type='one-hot'):
   """
   Encodes categorical data in a DataFrame.
 
   Args:
-    df: The DataFrame to process.
+    file_path: The path to the file that contains DataFrame.
     encoding_type: The encoding type to use. Can be 'one-hot' or 'label'.
 
   Returns:
     A DataFrame with encoded categorical data.
   """
-
+  df=load_data(file_path)
   if encoding_type == 'one-hot':
     df = pd.get_dummies(df)
   elif encoding_type == 'label':
@@ -291,17 +295,17 @@ def encode_categorical_data(df, encoding_type='one-hot'):
 
   return df
 
-def check_data_quality(df):
+def check_data_quality(file_path:str):
   """
   Checks the quality of a DataFrame.
 
   Args:
-    df: The DataFrame to check.
+    file_path: The path to the file that contains DataFrame.
 
   Returns:
     A dictionary containing information about data quality issues.
   """
-
+  df=load_data(file_path)
   quality_report = {}
 
   # Check for missing values
@@ -324,18 +328,18 @@ def check_data_quality(df):
 
   return quality_report
 
-def create_new_features(df, target_column):
+def create_new_features(file_path:str, target_column:str):
   """
   Creates new features from existing features in a DataFrame.
 
   Args:
-    df: The DataFrame to process.
+    file_path: The path to the file that contains DataFrame.
     target_column: The target column for supervised learning tasks.
 
   Returns:
     A DataFrame with new features.
   """
-
+  df=load_data(file_path)
   # Numerical Features
   # - Polynomial Features:
   from sklearn.preprocessing import PolynomialFeatures
@@ -368,16 +372,17 @@ def create_new_features(df, target_column):
 
   return df
 
-def check_data_quality(df):
+def check_data_quality(file_path:str):
   """
   Checks the quality of a DataFrame.
 
   Args:
-    df: The DataFrame to check.
+    file_path: The path to the file that contains DataFrame.
 
   Returns:
     A dictionary containing information about data quality issues.
   """
+  df=load_data(file_path)
 
   quality_report = {}
 
